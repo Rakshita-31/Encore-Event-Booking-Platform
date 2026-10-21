@@ -1,9 +1,10 @@
 ﻿import { useEffect, useState } from 'react'
 import {
   ArrowRight, ArrowLeft, CalendarDays, MapPin, Ticket,
-  Search, Sparkles, Music2, ShieldCheck, CheckCircle2,
-  X, LoaderCircle, LockKeyhole
+  Search, Sparkles, ShieldCheck, CheckCircle2,
+  LoaderCircle, LockKeyhole
 } from 'lucide-react'
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "")
 
 const formatPrice = value =>
   new Intl.NumberFormat('en-IN', {
@@ -23,6 +24,8 @@ export default function App() {
   const [events, setEvents] = useState([])
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [bookedSeats, setBookedSeats] = useState([])
+  const [seatsLoading, setSeatsLoading] = useState(false)
+  const [seatsReady, setSeatsReady] = useState(false)
   const [selectedSeat, setSelectedSeat] = useState('')
   const [name, setName] = useState('')
   const [search, setSearch] = useState('')
@@ -32,7 +35,7 @@ export default function App() {
   const [confirmation, setConfirmation] = useState(null)
 
   useEffect(() => {
-    fetch('/api/events')
+    fetch(`${API_BASE}/api/events`)
       .then(r => {
         if (!r.ok) throw new Error('Could not load events')
         return r.json()
@@ -47,17 +50,23 @@ export default function App() {
     setSelectedSeat('')
     setConfirmation(null)
     setMessage('')
+    setBookedSeats([])
+    setSeatsReady(false)
+    setSeatsLoading(true)
     try {
-      const response = await fetch(`/api/bookings/event/${event.id}/seats`)
+      const response = await fetch(`${API_BASE}/api/bookings/event/${event.id}/seats`)
       if (!response.ok) throw new Error('Could not load seat availability')
       setBookedSeats(await response.json())
+      setSeatsReady(true)
     } catch (err) {
       setMessage(err.message)
+    } finally {
+      setSeatsLoading(false)
     }
   }
 
   async function reserveSeat() {
-    if (!selectedSeat || !name.trim()) {
+    if (!seatsReady || !selectedSeat || !name.trim()) {
       setMessage('Select a seat and enter your name.')
       return
     }
@@ -66,7 +75,7 @@ export default function App() {
     setMessage('')
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await fetch(`${API_BASE}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,7 +93,7 @@ export default function App() {
 
       if (response.status === 409) {
         const seatsResponse = await fetch(
-          `/api/bookings/event/${selectedEvent.id}/seats`
+          `${API_BASE}/api/bookings/event/${selectedEvent.id}/seats`
         )
         if (seatsResponse.ok) setBookedSeats(await seatsResponse.json())
         setSelectedSeat('')
@@ -130,7 +139,7 @@ export default function App() {
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600">
               <Ticket size={23} />
             </span>
-            Ticket<span className="text-violet-400">Lock.</span>
+            En<span className="text-violet-400">core.</span>
           </button>
           <div className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
             <span className="text-white">Discover</span>
@@ -286,7 +295,7 @@ export default function App() {
                 <div className="mt-10 rounded-2xl border border-white/10 bg-[#151020] p-6">
                   <h2 className="mb-2 text-xl font-bold">Choose your seat</h2>
                   <p className="mb-8 text-sm text-zinc-400">
-                    Select an available seat from the map below.
+                    {seatsLoading ? "Checking seat availability..." : seatsReady ? "Select an available seat from the map below." : "Seat availability could not be loaded. Return to events and try again."}
                   </p>
 
                   <div className="mb-9 rounded-t-[50%] border-t-4 border-violet-400 bg-gradient-to-b from-violet-500/15 to-transparent py-5 text-center text-xs tracking-[0.4em] text-violet-300">
@@ -300,8 +309,8 @@ export default function App() {
                       return (
                         <button
                           key={seat}
-                          disabled={occupied || !!confirmation}
-                          title={`${seat}${occupied ? ' â€” Booked' : ''}`}
+                          disabled={occupied || !!confirmation || !seatsReady || seatsLoading}
+                          title={`${seat}${occupied ? ' — Booked' : ''}`}
                           onClick={() => { setSelectedSeat(seat); setMessage('') }}
                           className={`flex aspect-square items-center justify-center rounded-md text-[9px] font-semibold transition sm:text-xs ${
                             occupied
@@ -377,7 +386,7 @@ export default function App() {
                         <p className="mb-4 rounded-lg bg-rose-500/10 p-3 text-sm text-rose-300">{message}</p>
                       )}
                       <button
-                        disabled={!selectedSeat || !name.trim() || booking}
+                        disabled={!seatsReady || seatsLoading || !selectedSeat || !name.trim() || booking}
                         onClick={reserveSeat}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-4 font-bold transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
                       >
@@ -398,9 +407,9 @@ export default function App() {
 
       <footer className="relative z-10 border-t border-white/10 py-8">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 text-sm text-zinc-500">
-          <span className="font-bold text-white">Ticket<span className="text-violet-400">Lock.</span></span>
+          <span className="font-bold text-white">En<span className="text-violet-400">core.</span></span>
           <span>Made for moments worth remembering.</span>
-          <span>Â© {new Date().getFullYear()} Encore</span>
+          <span>© {new Date().getFullYear()} Encore</span>
         </div>
       </footer>
     </div>
