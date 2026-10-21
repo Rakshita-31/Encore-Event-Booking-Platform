@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import {
   ArrowRight, ArrowLeft, CalendarDays, MapPin, Ticket,
   Search, Sparkles, Music2, ShieldCheck, CheckCircle2,
@@ -301,7 +301,7 @@ export default function App() {
                         <button
                           key={seat}
                           disabled={occupied || !!confirmation}
-                          title={`${seat}${occupied ? ' — Booked' : ''}`}
+                          title={`${seat}${occupied ? ' â€” Booked' : ''}`}
                           onClick={() => { setSelectedSeat(seat); setMessage('') }}
                           className={`flex aspect-square items-center justify-center rounded-md text-[9px] font-semibold transition sm:text-xs ${
                             occupied
@@ -400,9 +400,10 @@ export default function App() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 text-sm text-zinc-500">
           <span className="font-bold text-white">Ticket<span className="text-violet-400">Lock.</span></span>
           <span>Made for moments worth remembering.</span>
-          <span>© {new Date().getFullYear()} TicketLock</span>
+          <span>Â© {new Date().getFullYear()} Encore</span>
         </div>
       </footer>
     </div>
   )
 }
+
